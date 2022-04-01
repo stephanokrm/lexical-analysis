@@ -71,7 +71,7 @@ const getInteger = (): Expression => {
 const getIdentifier = (): Expression => {
     return {
         token: 'IDENTIFICADOR',
-        pattern: /^[a-zA-Z]*([a-zA-Z0-9]*)$/,
+        pattern: /^[a-zA-Z]+([a-zA-Z0-9]*)$/,
         symbol: true
     }
 }
@@ -87,7 +87,7 @@ const expressions: Expression[] = [
 
 const parser = () => {
     const symbols = {};
-    const errors = [];
+    const errors: string[] = [];
 
     const fn = (content: string, index: number): string => {
         const line = index + 1;
@@ -137,6 +137,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
             .status(200)
             .json({
                 analysis: {
+                    content,
                     lines,
                     symbols: identify.getSymbols(),
                     errors: identify.getErrors(),
