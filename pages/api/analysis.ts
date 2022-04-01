@@ -17,6 +17,8 @@ type Token = string | {
 interface Expression {
     token: Token;
     pattern: RegExp;
+    symbol: boolean;
+    multiple?: boolean;
 }
 
 const getKey = (): Expression => {
@@ -39,13 +41,14 @@ const getKey = (): Expression => {
 
     const pattern = new RegExp(`^(${keys.join('|')})$`);
 
-    return {token, pattern};
+    return {token, pattern, symbol: false, multiple: true};
 };
 
 const getComment = (): Expression => {
     return {
         token: 'COMENTÁRIO',
         pattern: /^\/\/.*$/,
+        symbol: false,
     }
 }
 
@@ -53,6 +56,7 @@ const getFloat = (): Expression => {
     return {
         token: 'NÚMERO REAL',
         pattern: /^\d{1,2}\.\d{1,2}$/,
+        symbol: true
     }
 }
 
@@ -60,6 +64,7 @@ const getInteger = (): Expression => {
     return {
         token: 'NÚMERO INTEIRO',
         pattern: /^\d{1,2}$/,
+        symbol: true
     }
 }
 
@@ -67,6 +72,7 @@ const getIdentifier = (): Expression => {
     return {
         token: 'IDENTIFICADOR',
         pattern: /^[a-zA-Z]*([a-zA-Z0-9]*)$/,
+        symbol: true
     }
 }
 
@@ -80,7 +86,8 @@ const expressions: Expression[] = [
 ];
 
 const parser = () => {
-    const tokens = {};
+    const symbols = {};
+    const errors = [];
 
     const fn = (content: string, index: number): string => {
         const line = index + 1;
@@ -89,22 +96,32 @@ const parser = () => {
             if (expressions[i].pattern.test(content)) {
                 const token = expressions[i].token;
 
-                const identifier = typeof token === 'string' ? token : token[content];
+                if (expressions[i].symbol) {
+                    if (!symbols[content]) {
+                        symbols[content] = Object.keys(symbols).length + 1;
+                    }
 
-                if (!tokens[content]) {
-                    tokens[content] = Object.keys(tokens).length + 1;
+                    return `[${line}] ${token} ${symbols[content]}`;
                 }
 
-                return `[${line}] ${identifier} ${tokens[content]}`;
+                if (expressions[i].multiple) {
+                    return `[${line}] ${token[content]}`;
+                }
+
+                return `[${line}] ${token}`;
             }
         }
 
-        return `[${line}] ERRO`;
+        errors.push(`${line} (${content})`);
     };
 
     return {
         fn,
-        tokens,
+        getErrors: () => errors,
+        getSymbols: () => Object
+            .keys(symbols)
+            .sort((previous, next) => symbols[previous] > symbols[next] ? 1 : -1)
+            .map(symbol => `${symbols[symbol]}. ${symbol}`),
     };
 };
 
@@ -113,11 +130,17 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     form.parse(req, (err, fields, files) => {
         const identify = parser();
-        const data = fs.readFileSync((files.file as formidable.File).filepath, 'utf8');
-        const lines = data.split(/\r?\n/).map(identify.fn);
+        const content = fs.readFileSync((files.file as formidable.File).filepath, 'utf8');
+        const lines = content.split(/\r?\n/).map(identify.fn).filter(Boolean);
 
-        console.log(identify.tokens);
-
-        res.status(200).json({analysis: lines});
+        res
+            .status(200)
+            .json({
+                analysis: {
+                    lines,
+                    symbols: identify.getSymbols(),
+                    errors: identify.getErrors(),
+                },
+            });
     })
 }
