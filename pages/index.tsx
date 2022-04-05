@@ -1,5 +1,6 @@
 import {useState} from "react";
 import axios, {AxiosRequestConfig} from "axios";
+import SyntaxHighlighter from 'react-syntax-highlighter';
 import {materialDark} from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import {
     Button,
@@ -13,15 +14,12 @@ import {
     Divider
 } from "@mui/material";
 
-import SyntaxHighlighter from 'react-syntax-highlighter';
-
 export default function Home() {
     const [progress, setProgress] = useState<number>(0);
     const [content, setContent] = useState<string>();
     const [tokens, setTokens] = useState<string[]>([]);
     const [symbols, setSymbols] = useState<string[]>([]);
     const [errors, setErrors] = useState<string[]>([]);
-    const [errorsLines, setErrorsLines] = useState<string[]>([]);
 
     const onChange = event => {
         const config: AxiosRequestConfig = {
@@ -40,7 +38,6 @@ export default function Home() {
             setTokens(response.data.analysis.tokens);
             setSymbols(response.data.analysis.symbols);
             setErrors(response.data.analysis.errors);
-            setErrorsLines(response.data.analysis.errorsLines);
         });
 
         event.target.value = null;
@@ -48,7 +45,7 @@ export default function Home() {
 
     return (
         <Container maxWidth="xl">
-            <Grid container spacing={5} justifyContent="center">
+            <Grid container spacing={5}>
                 <Grid item xs={12}>
                     <LinearProgress variant="determinate" value={progress}/>
                 </Grid>
@@ -69,16 +66,7 @@ export default function Home() {
                     </Grid>
                 </Grid>
                 <Grid xs={12} md={6}>
-                    <SyntaxHighlighter showLineNumbers language="javascript" style={materialDark}
-                                       lineProps={lineNumber => {
-                                           console.log({lineNumber, errorsLines});
-
-                                           if (errorsLines.includes(lineNumber)) {
-                                               return {style: {display: 'block', color: 'red'}};
-                                           }
-
-                                           return {};
-                                       }}>
+                    <SyntaxHighlighter showLineNumbers style={materialDark}>
                         {content}
                     </SyntaxHighlighter>
                 </Grid>
