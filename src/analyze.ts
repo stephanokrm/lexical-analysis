@@ -25,7 +25,6 @@ const getSymbols = (symbols: Symbols): string[] => {
 const analyse = (fileContent: string): Analysis => {
     const lines = fileContent.split(/\r?\n/);
     const errors = [];
-    const errorsLines = [];
     const tokens = [];
     const symbols = {};
 
@@ -53,7 +52,6 @@ const analyse = (fileContent: string): Analysis => {
         }
 
         if (!identified) {
-            errorsLines.push(line);
             errors.push(`${line} (${lineContent})`);
         }
     }
@@ -61,7 +59,6 @@ const analyse = (fileContent: string): Analysis => {
     return {
         errors,
         tokens,
-        errorsLines,
         symbols: getSymbols(symbols),
     };
 };

@@ -2,7 +2,6 @@ export interface Analysis {
     tokens: string[];
     symbols: string[];
     errors: string[];
-    errorsLines: number[];
 }
 
 export type Keys = 'int' | 'double' | 'float' | 'real' | 'break' | 'case' | 'char' | 'const' | 'continue';
