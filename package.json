@@ -17,9 +17,11 @@
     "formidable": "latest",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-syntax-highlighter": "latest"
   },
   "devDependencies": {
+    "@types/axios": "latest",
     "@types/formidable": "latest",
     "@types/node": "latest",
     "eslint": "latest",

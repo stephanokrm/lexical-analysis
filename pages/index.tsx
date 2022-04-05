@@ -1,5 +1,6 @@
 import {useState} from "react";
-import axios from "axios";
+import axios, {AxiosRequestConfig} from "axios";
+import {materialDark} from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import {
     Button,
     LinearProgress,
@@ -12,17 +13,20 @@ import {
     Divider
 } from "@mui/material";
 
+import SyntaxHighlighter from 'react-syntax-highlighter';
+
 export default function Home() {
-    const [progress, setProgress] = useState(0);
-    const [content, setContent] = useState();
-    const [lines, setLines] = useState([]);
-    const [symbols, setSymbols] = useState([]);
-    const [errors, setErrors] = useState([]);
+    const [progress, setProgress] = useState<number>(0);
+    const [content, setContent] = useState<string>();
+    const [tokens, setTokens] = useState<string[]>([]);
+    const [symbols, setSymbols] = useState<string[]>([]);
+    const [errors, setErrors] = useState<string[]>([]);
+    const [errorsLines, setErrorsLines] = useState<string[]>([]);
 
     const onChange = event => {
-        const config = {
+        const config: AxiosRequestConfig = {
             headers: {'Content-Type': 'multipart/form-data'},
-            onUploadProgress: (event) => {
+            onUploadProgress: (event: any) => {
                 setProgress(Math.round((event.loaded * 100) / event.total));
             },
         };
@@ -32,17 +36,19 @@ export default function Home() {
 
         axios.post('/api/analysis', formData, config).then(response => {
             setProgress(0);
-            setContent(response.data.analysis.content);
-            setLines(response.data.analysis.lines);
+            setContent(response.data.content);
+            setTokens(response.data.analysis.tokens);
             setSymbols(response.data.analysis.symbols);
             setErrors(response.data.analysis.errors);
+            setErrorsLines(response.data.analysis.errorsLines);
         });
+
         event.target.value = null;
     };
 
     return (
         <Container maxWidth="xl">
-            <Grid container spacing={2} justifyContent="center">
+            <Grid container spacing={5} justifyContent="center">
                 <Grid item xs={12}>
                     <LinearProgress variant="determinate" value={progress}/>
                 </Grid>
@@ -57,25 +63,34 @@ export default function Home() {
                                     accept="text/plain"
                                     type="file"
                                     onChange={onChange}/>
-                                <Button component="span">Escolher Arquivo</Button>
+                                <Button component="span" variant="contained">Escolher Arquivo</Button>
                             </label>
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid xs={12} md={6}>
-                    <pre>
-                    {content}
-                        </pre>
+                    <SyntaxHighlighter showLineNumbers language="javascript" style={materialDark}
+                                       lineProps={lineNumber => {
+                                           console.log({lineNumber, errorsLines});
+
+                                           if (errorsLines.includes(lineNumber)) {
+                                               return {style: {display: 'block', color: 'red'}};
+                                           }
+
+                                           return {};
+                                       }}>
+                        {content}
+                    </SyntaxHighlighter>
                 </Grid>
                 <Grid xs={12} md={2}>
                     <List
                         subheader={
                             <ListSubheader>
-                                Linhas
+                                Tokens de Entrada
                             </ListSubheader>
                         }
                     >
-                        {lines.map(line => (
+                        {tokens.map(line => (
                             <>
                                 <ListItem>
                                     <ListItemText primary={line}/>
@@ -89,7 +104,7 @@ export default function Home() {
                     <List
                         subheader={
                             <ListSubheader>
-                                Símbolos
+                                Tabela de Símbolos
                             </ListSubheader>
                         }
                     >
@@ -107,7 +122,7 @@ export default function Home() {
                     <List
                         subheader={
                             <ListSubheader>
-                                Erros
+                                Erros Nas Linhas
                             </ListSubheader>
                         }
                     >
